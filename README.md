@@ -30,6 +30,33 @@ Features:
 - Runs anywhere a script can run on a schedule: GitHub Actions (free,
   recommended), Windows Task Scheduler, cron.
 
+## Go live — current status and remaining steps
+
+**Status right now:** all code and docs are in place and tested. The Actions
+workflow is **manually disabled** so it doesn't fail-and-email every 15
+minutes while the secrets are missing. Remaining steps, in order:
+
+1. **Create the Discord bot** (once, ~5 min): [docs/GUIDE.md section 5.1](docs/GUIDE.md)
+   — new application at discord.com/developers, copy the bot token, enable
+   **Server Members Intent**, invite it to the server with Send Messages only.
+2. **Get the Raid-Helper API key**: type `/apikey` in the Discord server,
+   pick **show**.
+3. **Add both as repo secrets**: Settings → Secrets and variables → Actions →
+   `DISCORD_BOT_TOKEN` and `RAIDHELPER_API_KEY`.
+4. **Commit a real `config.json`**: copy `config.example.json`, fill in the
+   server ID, team role/channel IDs, and the @raiders role ID for
+   announcements ([docs/GUIDE.md section 7](docs/GUIDE.md) explains every field).
+5. **Enable the workflow**: Actions tab → "Send signup reminders" →
+   Enable workflow.
+6. **Dry-run first**: Actions tab → Run workflow → tick **dry_run** → read
+   the log; it prints exactly who would get what without sending anything.
+7. **Live smoke test**: set one audience's `user_ids` to just your own
+   Discord ID, run for real, confirm the DM arrives, then restore the real
+   config.
+
+For handover: Settings → Transfer ownership; the new owner re-adds the two
+secrets (secrets never transfer, by design).
+
 ## Quick start
 
 1. Read **[docs/GUIDE.md](docs/GUIDE.md)** — the complete setup and operations
