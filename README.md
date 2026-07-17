@@ -31,6 +31,9 @@ Features:
   relative ones (48h/24h/2h before each event).
 - Digest mode: one DM listing all unsigned raids instead of a pile of pings.
 - Never sends anything twice (`state.json` audit trail).
+- Run reports in Discord: after any run that sent something, posts a summary
+  (who was DMed, what was announced) to a channel of your choice
+  (`log_channel_id`) — day-to-day visibility without opening GitHub.
 - People who responded *anything* (Bench, Late, Tentative, Absence) are left
   alone (configurable).
 - Single Python file, standard library only. Nothing to install.

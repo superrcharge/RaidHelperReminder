@@ -52,6 +52,7 @@ Gather these eight values before touching anything else.
 | 6 | **@raiders role ID** (the role the 8:15 announcement pings) | same | `config.json`: `announcements[0].mention_role_ids` |
 | 7 | **Team A + Team B signup channel IDs** | Discord app: right-click each signup channel (in the channel list, left side) -> **Copy Channel ID** | `config.json`: `audience_rules` (routes each event to the right team) |
 | 8 | *(optional)* **Fallback channel ID** (public ping for members whose DMs are closed) | same | `config.json`: `discord.fallback_channel_id` ("" = feature off) |
+| 9 | *(optional)* **Run-report channel ID** (bot posts "who was DMed / what was announced" after each live run - e.g. an officers channel; the bot needs View + Send access there) | same | `config.json`: `discord.log_channel_id` ("" = feature off) |
 
 > If channel access does NOT line up with team roles, an audience can instead
 > use `"channel_access": "<channelId>"` — everyone who can see that channel
