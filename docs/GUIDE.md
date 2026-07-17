@@ -247,6 +247,12 @@ explains every field. Test with a dry run before going live (section 8).
 
 ## 6. Hosting: where does the script run? (pick exactly ONE)
 
+> ### ✅ Recommended / preferred course of action: **Option A — GitHub Actions**
+> This is what we are aiming to go with, and what this repository is already
+> fully wired for. Free, no computer that has to stay on, and every run
+> leaves a readable log. Unless you have a specific reason to self-host,
+> follow Option A and skip B and C entirely.
+
 The script needs *something* to run it on a schedule. There are three
 options. **They are alternatives, not steps — choose one and ignore the
 other two.** All three run the identical script with the identical config;
@@ -262,7 +268,7 @@ switching later is painless.
 | Where you check it ran | Actions tab (log per run) | Task Scheduler history | cron logs |
 | Best for | Almost everyone — **the recommended default, and what this repo is already set up for** | Wanting everything on hardware you own, and the PC is usually on at reminder times | Already owning a home server / comfortable with Linux |
 
-### Option A — GitHub Actions (recommended; this repo is already set up for it)
+### Option A — GitHub Actions ✅ PREFERRED COA (already set up in this repo)
 
 Free, no server, every run leaves a readable log.
 
@@ -290,7 +296,7 @@ Notes:
   activity; GitHub emails first, one click re-enables, and the state commits
   usually count as activity anyway.
 
-### Option B — your own PC (Task Scheduler)
+### Option B — your own PC (Task Scheduler) — alternative, only if not using A
 
 Reminders only go out while the PC is on. Requires Python 3.9+
 (python.org, tick "Add to PATH"); no other installs.
@@ -312,7 +318,7 @@ year-round if the PC is set to Eastern — no daylight-saving juggling.)
 > same config keep separate `state.json` notebooks and WILL double-message
 > people. One scheduler at a time, always.
 
-### Option C — always-on alternatives
+### Option C — always-on alternatives — for completeness, only if not using A or B
 
 Raspberry Pi or any Linux box with `cron`; Oracle Cloud free tier; Railway /
 Fly.io hobby tiers; Cloudflare Workers cron (would need a JavaScript port —
