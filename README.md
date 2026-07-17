@@ -95,6 +95,15 @@ minutes while the secrets are missing. Remaining steps, in order:
 For handover: Settings → Transfer ownership; the new owner re-adds the two
 secrets (secrets never transfer, by design).
 
+## Settings GUI
+
+**https://superrcharge.github.io/raid-console/** — a browser page for editing
+every setting in `config.json` (teams, routing, wording, timings, report
+channels) with friendly forms instead of raw JSON, plus a dry-run button.
+First use needs a one-time GitHub token (2 minutes; the page walks you
+through it). Source: [raid-console](https://github.com/superrcharge/raid-console)
+(public repo, code only — all settings stay in this private repo).
+
 ## Quick start
 
 1. Read **[docs/GUIDE.md](docs/GUIDE.md)** — the complete setup and operations
