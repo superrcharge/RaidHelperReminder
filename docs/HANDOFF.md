@@ -146,11 +146,22 @@ and a working signup link. The run's final commit updates `state.json`.*
 **5.4 - Duplicate suppression.** Run the workflow again with the same settings.
 *Pass: log says nothing new to send; no second DM.*
 
-**5.5 - Announcement smoke test.** Within 15 minutes before a raid start
-(or create a throwaway test event starting in ~10 minutes, with Raid-Helper's `/create` in any private test channel), Run workflow with
-mode `announcements`, dry_run OFF.
-*Pass: one message appears in the event's signup channel pinging @raiders
-with the "Raid invites has started..." text. Re-running posts no duplicate.*
+**5.5 - Announcement smoke test.** No need to wait for a raid or create a
+throwaway event (field-tested shortcut, July 17, 2026): in `config.json`,
+temporarily set the announcement's `minutes_before` to a number larger than
+the minutes until an EXISTING event's start (e.g. `6500` for an event ~4 days
+out), add `"channel_id": "<private test channel id>"` so it posts there
+instead of the real signup channel, and set `mention_role_ids` to `[]` so
+nobody gets pinged. Commit, Run workflow with mode `announcements`, dry_run
+OFF. The bot must be able to SEE the test channel - if it's private, right-
+click the channel -> Edit Channel -> Permissions -> add the bot with View
+Channel + Send Messages (a `FAILED to announce ... check bot access` log
+line means exactly this). Afterwards restore `minutes_before: 15`, the real
+`mention_role_ids`, and remove the `channel_id` override. The temporary
+wide-window test does NOT stop the real 15-minute announcement later - the
+duplicate tracker keys on the window size too.
+*Pass: the message appears in the test channel with the "Raid invites has
+started..." text. Re-running posts no duplicate.*
 
 **5.6 - Restore the real config.** Revert the 5.3 audience change, commit.
 *Pass: `config.json` matches section 4 again.*

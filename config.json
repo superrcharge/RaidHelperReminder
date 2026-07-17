@@ -10,15 +10,17 @@
     "server_id": "1349830753403539679"
   },
 
-  "_comment_audiences": "SMOKE TEST CONFIG (HANDOFF 5.3) - ALL audiences temporarily point at Mike's user id only, so exactly one test DM goes to him and nobody else. Real audiences (restore after test): default/@raiders 1361002868781351152, teamRed 1527492157483520060, teamBlue 1527492255462719568.",
+  "_comment_audiences": "SMOKE TEST CONFIG (HANDOFF 5.3) - default/teamRed/teamBlue temporarily point at Mike's user id only, so test DMs go to him and nobody else. Real audiences (restore to go live): default/@raiders 1361002868781351152, teamRed 1527492157483520060, teamBlue 1527492255462719568. The 'testers' audience is PERMANENT - it keeps events posted in the test channel from ever DMing the whole guild.",
   "audiences": {
     "default":  { "user_ids": ["123180705864876035"] },
     "teamRed":  { "user_ids": ["123180705864876035"] },
-    "teamBlue": { "user_ids": ["123180705864876035"] }
+    "teamBlue": { "user_ids": ["123180705864876035"] },
+    "testers":  { "user_ids": ["123180705864876035"] }
   },
 
   "_comment_rules": "Which audience each event gets, by the channel the signup was posted in. First match wins; no match = default. Red raids Tue + Thu, Blue raids Wed + Sun.",
   "audience_rules": [
+    { "match": { "channel_id": "1527491633233526824" }, "audience": "testers" },
     { "match": { "channel_id": "1412563215396634624" }, "audience": "teamRed" },
     { "match": { "channel_id": "1412580181285277770" }, "audience": "teamRed" },
     { "match": { "channel_id": "1458633730624065673" }, "audience": "teamBlue" },
@@ -39,13 +41,12 @@
     "per_window": {}
   },
 
-  "_comment_announcements": "ANNOUNCEMENT SMOKE TEST (HANDOFF 5.5) - window widened to 6500 min so the real Tuesday event qualifies now; posts to the TEST channel with NO role ping. Real values to restore: minutes_before 15, mention_role_ids [1361002868781351152], no channel_id override, text without the TEST prefix.",
+  "_comment_announcements": "Channel messages posted N minutes before each event starts, in the event's own channel. Pings the @raiders role. (Announcement smoke test passed July 17, 2026.)",
   "announcements": [
     {
-      "minutes_before": 6500,
-      "mention_role_ids": [],
-      "channel_id": "1527491633233526824",
-      "text": "(TEST - ignore) Raid invites has started for tonight's raid. Please have your gear and consumes. Whisper Kcin or an Officer for an invite!"
+      "minutes_before": 15,
+      "mention_role_ids": ["1361002868781351152"],
+      "text": "Raid invites has started for tonight's raid. Please have your gear and consumes. Whisper Kcin or an Officer for an invite!"
     }
   ],
 
