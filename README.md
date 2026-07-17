@@ -54,7 +54,7 @@ numbered list below and in [docs/HANDOFF.md](docs/HANDOFF.md).*
 |---|------|--------|
 | 1 | Create the Discord bot (token copied, **Server Members Intent** on) | 🔄 in progress today |
 | 2 | Invite the bot to the server (needs Manage Server — else send invite URL to guild leader) | ⬜ |
-| 3 | Get the Raid-Helper API key (`/apikey` → show; needs elevated perms) | 📨 asking guild leader |
+| 3 | Get the Raid-Helper API key (`/apikey` → show; needs elevated perms) | ✅ July 17 — key received from guild leader |
 | 4 | Collect IDs: server, team roles, @raiders role, signup channels | 🔄 in progress today |
 | 5 | Add repo secrets `DISCORD_BOT_TOKEN` + `RAIDHELPER_API_KEY` | ⬜ |
 | 6 | Commit real `config.json` | ⬜ |
