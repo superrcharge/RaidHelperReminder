@@ -183,7 +183,15 @@ Discord. Details for all three: [GUIDE.md section 2](GUIDE.md).
 2. New owner: re-add the two secrets (section 3) - secrets do not transfer.
 3. New owner: confirm the workflow is still enabled (Actions tab) and click
    Run workflow -> dry_run as a sanity check.
-4. Optional: previous owner deletes their local clone; nothing secret is in it.
+4. **The Discord bot application** is owned by the previous owner's Discord
+   account and does NOT transfer with the repo. Easiest fix (10 min): the new
+   owner creates their *own* application (HANDOFF section 2, value 1 — same
+   steps: New Application -> Bot -> Reset Token -> enable Server Members
+   Intent -> OAuth2 invite with View Channels + Send Messages), then replaces
+   the `DISCORD_BOT_TOKEN` secret with their token. The config does not care
+   which bot sends the messages. The old bot can then be kicked from the
+   server and its application deleted.
+5. Optional: previous owner deletes their local clone; nothing secret is in it.
 
 Day-to-day ownership = editing `config.json` (roles, times, wording) and
 reading the Actions log when curious. The operations reference, including
