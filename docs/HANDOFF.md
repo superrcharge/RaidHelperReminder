@@ -199,7 +199,7 @@ so the old owner isn't a hidden dependency forever.
 
 ### Phase E — settings console (5 min)
 
-- [ ] **E1 [new owner]** — open
+- [x] **E1 [new owner]** — open
       **https://kcintv.github.io/raid-console/** → change **Repo
       owner** to your GitHub username → follow the on-page token steps
       (fine-grained token, only the RaidHelperReminder repo, Contents +
@@ -211,7 +211,7 @@ so the old owner isn't a hidden dependency forever.
       then github.com/settings/tokens → the `raid-console` classic token →
       **Delete**. Then do E1 with the fine-grained token. One token, least
       access, no leftovers.
-- [ ] **E2 [new owner]** — prove the loop: change anything trivial (e.g.
+- [x] **E2 [new owner]** — prove the loop: change anything trivial (e.g.
       add a space to a message), **Save & deploy**, see the commit appear on
       the repo, then change it back.
 - [x] *(optional)* **E3 [old owner]** — transfer the `raid-console` repo the
