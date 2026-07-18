@@ -73,10 +73,40 @@ Work top to bottom; each phase has a pass condition. Rough total: 30–40
 minutes, all in the browser. Steps marked **[old owner]** are done by Mike,
 **[new owner]** by the guild leader.
 
+### Phase 0 — spin the new owner up BEFORE transferring (recommended)
+
+Do this first: it lets the guild leader drive everything — edit settings,
+trigger runs, read logs — for days or weeks while the old owner still owns
+the repo and can help. The actual transfer (phase B) then changes nothing
+about his day-to-day.
+
+- [ ] **0.1 [new owner]** — create a free GitHub account: github.com →
+      Sign up. Tell the old owner the exact username.
+- [ ] **0.2 [old owner]** — repo → **Settings** → **Collaborators** (left
+      sidebar) → **Add people** → type the username → select role
+      **Admin** (lets him manage secrets and settings too; **Write** is
+      enough if you only want him editing config and running workflows).
+- [ ] **0.3 [new owner]** — accept the invitation (GitHub emails a link).
+      *Pass: the repo appears when you're logged in as you.*
+- [ ] **0.4 [new owner]** — you can now do everything in the browser:
+      - **Change settings:** open `config.json` → pencil icon → edit →
+        Commit changes ([GITHUB-BASICS.md](GITHUB-BASICS.md) shows every
+        button; [GUIDE.md section 7](GUIDE.md) explains every field).
+      - **Safe test run:** **Actions** tab → *Send signup reminders* →
+        **Run workflow** → tick **dry_run** → read the log.
+      - **See what happened:** Actions tab logs + the officers-chat reports.
+- [ ] **0.5 [new owner, optional]** — to use the **settings console**
+      before the transfer: GitHub's fine-grained tokens only work on repos
+      you *own*, so pre-transfer create a **classic** token instead —
+      github.com/settings/tokens → **Generate new token (classic)** → tick
+      the **repo** scope → Generate → paste it into the console sign-in
+      (set Repo owner to the OLD owner's username while the repo still
+      lives there). On a fresh account this token reaches only this one
+      repo. After the transfer, switch to the fine-grained token (phase E).
+
 ### Phase A — before transferring (10 min)
 
-- [ ] **A1 [new owner]** — create a free GitHub account if you don't have
-      one: github.com → Sign up. Tell the old owner the username.
+- [ ] **A1 [new owner]** — GitHub account exists (done in phase 0).
 - [ ] **A2 [old owner]** — confirm the system is healthy: officers chat got
       its expected reports this week, or run a dry run (Actions tab) and see
       it pass. Don't transfer a broken system.

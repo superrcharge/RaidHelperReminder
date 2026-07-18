@@ -10,7 +10,7 @@ The target workflow it delivers, end to end:
 1. Signups for every raid night appear automatically each week *(Raid-Helper Premium — section 2.1)*
 2. Friday 5PM ET: everyone expected who hasn't signed up gets one DM listing their unsigned raids *(this project)*
 3. Members get a gear/consumes DM the moment they sign up *(Raid-Helper Premium — section 2.2)*
-4. 15 minutes before each raid: "invites started, whisper Kcin" posted in the signup channel, pinging @raiders *(this project)*
+4. About an hour before each raid (configurable): "invites started, whisper Kcin" posted in the signup channel, pinging @raiders *(this project)*
 5. Attendance is tracked automatically *(Raid-Helper — section 2.3)*
 
 ---
@@ -59,10 +59,10 @@ events, pointing members at the consume FAQ channel. Setup: section 2.2.
 (Raid-Helper's built-in `reminder` setting pings *people who signed up*, not
 a role, and its text isn't customizable to this wording). The script's
 `announcements` config posts the exact requested message into each event's
-own signup channel, mentioning @raiders, 15 minutes before raid start —
-which is 8:15PM for an 8:30 raid, on every raid night, automatically. The
-announcement schedule runs every 15 minutes so the post lands on time.
-Config: section 7.
+own signup channel, mentioning @raiders, starting **60 minutes before raid
+start** (`minutes_before`, freely changeable) — on every raid night,
+automatically. The schedule checks every 15 minutes during evening hours,
+so the post lands 45–60 minutes before start. Config: section 7.
 
 **Requirement 5 — attendance tracking.** Native Raid-Helper (the
 `attendance` advanced setting, on by default) with stats via `/attendance`;
@@ -152,7 +152,7 @@ flowchart TD
     D --> E[Who is expected?<br/>roles, user list, or channel access]
     E --> F[Expected minus responded = missing]
     F --> G[One digest DM per missing person<br/>listing all their unsigned raids]
-    B --> H{15 min before a raid?}
+    B --> H{Within an hour of a raid?}
     H -- yes --> I[Post 'invites started' in the<br/>signup channel, ping the role]
     G --> J[Write everything in the notebook<br/>state.json - nothing sends twice]
     I --> J
@@ -160,10 +160,10 @@ flowchart TD
 
 Key ideas:
 
-- **Two jobs, one script.** `--mode reminders` sends the sign-up DMs;
-  `--mode announcements` posts the raid-time channel messages. The GitHub
-  Actions schedule runs announcements every 15 minutes and reminders on
-  Friday at 5PM Eastern.
+- **Two jobs, one script, two schedules.** `--mode reminders` sends the
+  sign-up DMs; `--mode announcements` posts the raid-time channel messages.
+  Each has its own GitHub Actions workflow file: `announce.yml` checks every
+  15 minutes during evening raid hours, `remind.yml` runs Friday 5PM Eastern.
 - **Audiences** — who counts as "expected" — are defined per team. Two teams
   raiding twice a week = two audiences + rules mapping each event to its team
   (by signup channel or title). Each of the 4 weekly raids gets exactly the
@@ -325,17 +325,20 @@ Free, no server, every run leaves a readable log.
 2. **Settings** (right-most tab in the row along the top of the project
    page) → left sidebar: **Secrets and variables → Actions** → add
    `DISCORD_BOT_TOKEN` and `RAIDHELPER_API_KEY`.
-3. Done. `.github/workflows/remind.yml` already schedules:
-   - **announcements every 15 minutes** (so the "invites started" post lands
-     close to raid time), and
-   - **reminders Friday 5PM Eastern**. GitHub cron runs in UTC and can't
-     follow US daylight saving, so the workflow schedules both possible UTC
-     times; the extra one finds nothing new to send (state dedup) and exits.
+3. Done. The two workflow files already schedule everything:
+   - `.github/workflows/announce.yml` — **announcement checks every 15
+     minutes during evening raid hours** (21:00–03:59 UTC, cheap on the
+     free Actions allowance and covers any evening raid), and
+   - `.github/workflows/remind.yml` — **reminders Friday 5PM Eastern**.
+     GitHub cron runs in UTC and can't follow US daylight saving, so it
+     schedules both possible UTC times; the extra one finds nothing new to
+     send (state dedup) and exits.
 
 Notes:
-- GitHub's scheduler can drift a few minutes at busy times. For the 8:15PM
-  announcement that means "8:15-and-change" — if exact-to-the-minute matters,
-  host on a PC (Option B) where Task Scheduler is precise.
+- GitHub's scheduler can drift a few minutes at busy times. The announcement
+  posts on the first check inside its 60-minute window, so it lands 45–60
+  minutes before start — if exact-to-the-minute matters, host on a PC
+  (Option B) where Task Scheduler is precise.
 - The **Actions** tab (same top tab row as Settings) shows every run;
   **Run workflow** (grey button on the workflow's page) with *dry run*
   ticked is the safe test button.
@@ -438,7 +441,7 @@ picks it up. No code edits, ever.
   // certain events - so different teams can get different wording.
   "announcements": [
     {
-      "minutes_before": 15,
+      "minutes_before": 60,          // becomes "due" this many minutes before start
       "mention_role_ids": ["999"],   // e.g. the @raiders role
       "text": "Raid invites has started for tonight's raid. Please have your gear and consumes. Whisper Kcin or an Officer for an invite!"
     }
