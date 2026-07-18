@@ -11,12 +11,12 @@
     "server_id": "1349830753403539679"
   },
 
-  "_comment_audiences": "PRE-GO-LIVE STATE: default/teamRed/teamBlue point at the test user only, so nothing DMs the guild yet. GO-LIVE (see HANDOFF section 2) = replace each user_ids line with role_ids: default/@raiders 1361002868781351152, teamRed 1527492157483520060, teamBlue 1527492255462719568. The 'testers' audience is PERMANENT - it keeps events posted in the test channel from ever DMing the whole guild.",
+  "_comment_audiences": "PRE-GO-LIVE STATE: default/teamRed/teamBlue point at the owner (Kcin) only, so nothing DMs the guild yet and his test DMs reach him. GO-LIVE (see HANDOFF section 2) = replace each user_ids line with role_ids: default/@raiders 1361002868781351152, teamRed 1527492157483520060, teamBlue 1527492255462719568. The 'testers' audience is PERMANENT - it keeps events posted in the test channel from ever DMing the whole guild (currently: Kcin + Mike).",
   "audiences": {
-    "default":  { "user_ids": ["123180705864876035"] },
-    "teamRed":  { "user_ids": ["123180705864876035"] },
-    "teamBlue": { "user_ids": ["123180705864876035"] },
-    "testers":  { "user_ids": ["123180705864876035"] }
+    "default":  { "user_ids": ["212391780279255041"] },
+    "teamRed":  { "user_ids": ["212391780279255041"] },
+    "teamBlue": { "user_ids": ["212391780279255041"] },
+    "testers":  { "user_ids": ["212391780279255041", "123180705864876035"] }
   },
 
   "_comment_rules": "Which audience each event gets, by the channel the signup was posted in. First match wins; no match = default. Red raids Tue + Thu, Blue raids Wed + Sun.",
