@@ -471,7 +471,10 @@ def mark_announced(state, event, announce_key):
 # Reminders - DM the people who haven't signed up
 # ---------------------------------------------------------------------------
 
-def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log):
+def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
+                  report=None):
+    if report is None:
+        report = {"dms": [], "closed": [], "unsigned": {}}
     guild_id = config["discord"]["guild_id"]
     windows = sorted(config.get("reminder_windows_hours") or [24])
     fallback_channel = (config.get("discord") or {}).get("fallback_channel_id") or ""
@@ -515,6 +518,7 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log):
         if missing:
             log(f"  Still unsigned for '{title}' ({len(missing)}): "
                 + names_list(missing))
+            report["unsigned"][title] = names_list(missing)
 
         for member in missing:
             uid = str(member["user"]["id"])
@@ -545,9 +549,11 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log):
             if delivered:
                 dm_count += len(contents)
                 log(f"  DM sent to {member_display_name(member)} ({uid}).")
+                report["dms"].append(member_display_name(member))
             else:
                 dms_closed.append(member)
                 log(f"  DMs closed for {member_display_name(member)} ({uid}).")
+                report["closed"].append(member_display_name(member))
         # Mark every due window for every event covered, so no other window
         # of the same event re-pings this member later in the same cycle.
         for event, _w in items:
@@ -579,7 +585,10 @@ def names_list(members, cap=30):
     return names
 
 
-def run_announcements(config, state, events, now, dry_run, bot_token, log, ctx=None):
+def run_announcements(config, state, events, now, dry_run, bot_token, log, ctx=None,
+                      report=None):
+    if report is None:
+        report = {"announced": [], "unsigned": {}, "failed": []}
     """Post configured channel messages N minutes before each event starts.
 
     Example config entry (fires 15 minutes before start, in the event's own
@@ -616,6 +625,8 @@ def run_announcements(config, state, events, now, dry_run, bot_token, log, ctx=N
                 if send_channel_message(channel, text, bot_token):
                     sent += 1
                     log(f"  Announcement posted for '{event.get('title')}' in {channel}.")
+                    chan_label = ctx.get_channel_name(channel) if ctx else str(channel)
+                    report["announced"].append((event.get("title") or "?", chan_label))
                     # Tell the officers who is still unsigned at invite time.
                     if ctx is not None:
                         _an, spec = pick_audience(event, config)
@@ -633,8 +644,12 @@ def run_announcements(config, state, events, now, dry_run, bot_token, log, ctx=N
                         if still:
                             log(f"  Still unsigned for '{event.get('title')}' "
                                 f"({len(still)}): " + names_list(still))
+                            report["unsigned"][event.get("title") or "?"] = names_list(still)
                 else:
                     log(f"  FAILED to announce in channel {channel} - check bot access.")
+                    chan_label = ctx.get_channel_name(channel) if ctx else str(channel)
+                    report["failed"].append(
+                        f"Announcement FAILED in {chan_label} - check the bot can view + send there.")
                     continue
             mark_announced(state, event, key)
 
@@ -654,6 +669,7 @@ class DiscordContext:
         self._members = None
         self._roles_map = None
         self._overwrites = {}
+        self._chan_names = {}
 
     def get_members(self):
         if self._members is None:
@@ -671,6 +687,17 @@ class DiscordContext:
             self._overwrites[cid] = fetch_channel_overwrites(cid, self.token)
         return self._overwrites[cid]
 
+    def get_channel_name(self, channel_id):
+        """'#channel-name' for run reports; falls back to the raw id."""
+        cid = str(channel_id)
+        if cid not in self._chan_names:
+            status, payload = http_json(
+                "GET", f"{DISCORD_API}/channels/{cid}",
+                headers=discord_headers(self.token))
+            name = payload.get("name") if (status == 200 and isinstance(payload, dict)) else None
+            self._chan_names[cid] = f"#{name}" if name else cid
+        return self._chan_names[cid]
+
 
 def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all"):
     server_id = config["raidhelper"]["server_id"]
@@ -681,32 +708,40 @@ def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all
     events = fetch_upcoming_events(server_id, rh_api_key, horizon)
     log(f"Fetched {len(events)} upcoming event(s) within {max(windows)}h.")
 
-    # Optional run report: every action line is also collected and, if
-    # discord.log_channel_id is set, posted to that channel afterwards -
-    # so officers can see what fired without opening the GitHub log.
-    activity = []
-
-    def tracked_log(line):
-        log(line)
-        s = str(line).strip()
-        if s.startswith(("DM sent", "DMs closed", "Announcement posted",
-                         "Still unsigned", "FAILED", "Fallback")):
-            activity.append(s)
+    # Optional run report: if discord.log_channel_id is set, a clean summary
+    # (display names, #channel-names, one line per fact) is posted there
+    # after the run - officers see what fired without opening the GitHub
+    # log. The GitHub log itself stays verbose (raw ids) for debugging.
+    report = {"dms": [], "closed": [], "announced": [], "unsigned": {}, "failed": []}
 
     ctx = DiscordContext(guild_id, bot_token)
     if mode in ("all", "reminders"):
-        run_reminders(config, state, events, now, dry_run, bot_token, ctx, tracked_log)
+        run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
+                      report=report)
     if mode in ("all", "announcements"):
-        run_announcements(config, state, events, now, dry_run, bot_token, tracked_log, ctx)
+        run_announcements(config, state, events, now, dry_run, bot_token, log, ctx,
+                          report=report)
     prune_state(state, now)
 
     log_channel = (config.get("discord") or {}).get("log_channel_id") or ""
-    if activity and log_channel and not dry_run and bot_token:
-        report = "**Raid Reminder — run report** (<t:%d:f>)\n" % now + \
-            "\n".join(f"- {line}" for line in activity)
-        if len(report) > 1900:  # Discord message limit is 2000 chars
-            report = report[:1900] + f"\n… (+{len(activity)} actions total)"
-        if not send_channel_message(log_channel, report, bot_token):
+    if log_channel and not dry_run and bot_token and any(report.values()):
+        lines = [f"**Raid Reminder — run report** (<t:{now}:f>)"]
+        if report["dms"]:
+            lines.append("📨 Reminder DMs sent: " + ", ".join(report["dms"]))
+        if report["closed"]:
+            lines.append("📪 Couldn't DM (privacy settings): " + ", ".join(report["closed"]))
+        for title, chan in report["announced"]:
+            lines.append(f"📣 Invites announcement posted in {chan} for **{title}**")
+        if report["unsigned"]:
+            lines.append("⏳ Still unsigned:")
+            for title, names in report["unsigned"].items():
+                lines.append(f"> **{title}** — {names}")
+        for f in report["failed"]:
+            lines.append(f"⚠️ {f}")
+        text = "\n".join(lines)
+        if len(text) > 1900:  # Discord message limit is 2000 chars
+            text = text[:1900] + "\n… (truncated - full detail in the Actions log)"
+        if not send_channel_message(log_channel, text, bot_token):
             log(f"FAILED to post run report to log channel {log_channel} - "
                 "check the bot can view + send there.")
 
