@@ -24,7 +24,7 @@ what the bot does, every setting explained, operations, troubleshooting.
 | Item | Status |
 |---|---|
 | Reminder DMs, digests, duplicate suppression | ✅ live-tested July 17, 2026 |
-| Raid-time announcements (75 min before start, evening schedule) | ✅ live-tested |
+| Raid-time announcements (60-min lead → posts 45–60 min before start, evening schedule) | ✅ live-tested |
 | Per-raid run reports to the officers chat (names, #channels) | ✅ live-tested |
 | Secrets (`DISCORD_BOT_TOKEN`, `RAIDHELPER_API_KEY`) | ✅ in place |
 | Workflows (Friday reminders + evening announcements) | ✅ enabled and running |
@@ -67,7 +67,7 @@ signup channels. Two prerequisites, then a two-minute edit.
       *Pass: each upcoming raid shows realistic "N expected, N responded,
       N missing" numbers and the "would DM" list is the real non-signers.*
 - [ ] **2.5 — Done.** From here everything is automatic: Friday 5PM ET
-      digest DMs to non-signers, announcements 60–75 min before each raid,
+      digest DMs to non-signers, announcements 45–60 min before each raid,
       a per-raid report in the officers chat after anything happens.
 
 ---
