@@ -752,6 +752,9 @@ def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all
             text = "\n".join(lines)
             if len(text) > 1900:  # Discord message limit is 2000 chars
                 text = text[:1900] + "\n… (truncated - full detail in the Actions log)"
+            # Trailing zero-width-space line = a visual gap between the
+            # stacked per-raid messages in the channel.
+            text += "\n​"
             if not send_channel_message(log_channel, text, bot_token):
                 log(f"FAILED to post run report to log channel {log_channel} - "
                     "check the bot can view + send there.")
