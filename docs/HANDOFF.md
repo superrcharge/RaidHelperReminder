@@ -88,9 +88,11 @@ about his day-to-day.
 - [ ] **0.1 [new owner]** — create a free GitHub account: github.com →
       Sign up. Tell the old owner the exact username.
 - [ ] **0.2 [old owner]** — repo → **Settings** → **Collaborators** (left
-      sidebar) → **Add people** → type the username → select role
-      **Admin** (lets him manage secrets and settings too; **Write** is
-      enough if you only want him editing config and running workflows).
+      sidebar) → **Add people** → type the username → **Add**. (No role to
+      pick — on a personal repo a collaborator automatically gets **write**
+      access: edit files, run workflows, read logs. Owner-only things —
+      secrets, repo settings, transfers — stay with you until the transfer,
+      and nothing in phase 0 needs them.)
 - [ ] **0.3 [new owner]** — accept the invitation (GitHub emails a link).
       *Pass: the repo appears when you're logged in as you.*
 - [ ] **0.4 [new owner]** — you can now do everything in the browser:
