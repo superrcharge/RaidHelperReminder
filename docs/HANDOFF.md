@@ -170,7 +170,7 @@ so the old owner isn't a hidden dependency forever.
       toggle if missed, Public Bot, the invite needing Manage Server).
       You end up with: a bot token copied, **Server Members Intent ON and
       saved**, and your bot visible in the server's member list.
-- [ ] **C2 [new owner]** — give the new bot access to the private channels
+- [x] **C2 [new owner]** — give the new bot access to the private channels
       the old bot had: the **officers chat** (run reports) and the
       **test channel** — for each: right-click the channel → Edit Channel →
       Permissions → Add members or roles → your bot → ✓ View Channel,
@@ -206,7 +206,7 @@ so the old owner isn't a hidden dependency forever.
       Actions read/write — this works now because you OWN the repo) →
       **Connect**.
       *Pass: your real teams and messages appear in the forms.*
-- [ ] **E1b [new owner, only if you did phase 0.5]** — retire the
+- [x] **E1b [new owner, only if you did phase 0.5]** — retire the
       pre-transfer classic token: click **Sign out** in the console first,
       then github.com/settings/tokens → the `raid-console` classic token →
       **Delete**. Then do E1 with the fine-grained token. One token, least
