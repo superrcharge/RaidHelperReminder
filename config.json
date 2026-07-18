@@ -45,7 +45,7 @@
   "_comment_announcements": "Channel messages posted N minutes before each event starts, in the event's own channel. Pings the @raiders role. (Announcement smoke test passed July 17, 2026.)",
   "announcements": [
     {
-      "minutes_before": 75,
+      "minutes_before": 60,
       "mention_role_ids": ["1361002868781351152"],
       "text": "Raid invites has started for tonight's raid. Please have your gear and consumes. Whisper Kcin or an Officer for an invite!"
     }
