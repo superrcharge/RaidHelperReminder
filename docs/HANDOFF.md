@@ -173,8 +173,14 @@ so the old owner isn't a hidden dependency forever.
       **https://superrcharge.github.io/raid-console/** → change **Repo
       owner** to your GitHub username → follow the on-page token steps
       (fine-grained token, only the RaidHelperReminder repo, Contents +
-      Actions read/write) → **Connect**.
+      Actions read/write — this works now because you OWN the repo) →
+      **Connect**.
       *Pass: your real teams and messages appear in the forms.*
+- [ ] **E1b [new owner, only if you did phase 0.5]** — retire the
+      pre-transfer classic token: click **Sign out** in the console first,
+      then github.com/settings/tokens → the `raid-console` classic token →
+      **Delete**. Then do E1 with the fine-grained token. One token, least
+      access, no leftovers.
 - [ ] **E2 [new owner]** — prove the loop: change anything trivial (e.g.
       add a space to a message), **Save & deploy**, see the commit appear on
       the repo, then change it back.
