@@ -725,7 +725,17 @@ def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all
 
     log_channel = (config.get("discord") or {}).get("log_channel_id") or ""
     if log_channel and not dry_run and bot_token and any(report.values()):
-        lines = [f"**Raid Reminder — run report** (<t:{now}:f>)"]
+        # Title the report after the raid(s) it covers - the bot's own name
+        # is already visible as the message author.
+        titles = list(dict.fromkeys(
+            [t for t, _c in report["announced"]] + list(report["unsigned"].keys())))
+        if len(titles) == 1:
+            header = f"**📋 {titles[0]}** — <t:{now}:f>"
+        elif titles:
+            header = f"**📋 Raid report ({len(titles)} raids)** — <t:{now}:f>"
+        else:
+            header = f"**📋 Run report** — <t:{now}:f>"
+        lines = [header]
         if report["dms"]:
             lines.append("📨 Reminder DMs sent: " + ", ".join(report["dms"]))
         if report["closed"]:
