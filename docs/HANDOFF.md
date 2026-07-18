@@ -170,7 +170,7 @@ so the old owner isn't a hidden dependency forever.
       toggle if missed, Public Bot, the invite needing Manage Server).
       You end up with: a bot token copied, **Server Members Intent ON and
       saved**, and your bot visible in the server's member list.
-- [x] **C2 [new owner]** — give the new bot access to the private channels
+- [ ] **C2 [new owner]** — give the new bot access to the private channels
       the old bot had: the **officers chat** (run reports) and the
       **test channel** — for each: right-click the channel → Edit Channel →
       Permissions → Add members or roles → your bot → ✓ View Channel,
