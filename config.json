@@ -1,39 +1,76 @@
 {
   "_comment": "LIVE CONFIG for the guild server. Everything the bot does is controlled from here - no code changes needed. See docs/GUIDE.md for a full explanation of every field.",
-
   "discord": {
     "guild_id": "1349830753403539679",
     "fallback_channel_id": "",
     "log_channel_id": "1511160589584564426"
   },
-
   "raidhelper": {
     "server_id": "1349830753403539679"
   },
-
   "_comment_audiences": "PRE-GO-LIVE STATE: default/teamRed/teamBlue point at the owner (Kcin) only, so nothing DMs the guild yet and his test DMs reach him. GO-LIVE (see HANDOFF section 2) = replace each user_ids line with role_ids: default/@raiders 1361002868781351152, teamRed 1527492157483520060, teamBlue 1527492255462719568. The 'testers' audience is PERMANENT - it keeps events posted in the test channel from ever DMing the whole guild (currently: Kcin + Mike).",
   "audiences": {
-    "default":  { "user_ids": ["212391780279255041"] },
-    "teamRed":  { "user_ids": ["212391780279255041"] },
-    "teamBlue": { "user_ids": ["212391780279255041"] },
-    "testers":  { "user_ids": ["212391780279255041", "123180705864876035"] }
+    "default": {
+      "user_ids": [
+        "212391780279255041"
+      ]
+    },
+    "teamRed": {
+      "user_ids": [
+        "212391780279255041"
+      ]
+    },
+    "teamBlue": {
+      "user_ids": [
+        "212391780279255041"
+      ]
+    },
+    "testers": {
+      "user_ids": [
+        "212391780279255041",
+        "123180705864876035"
+      ]
+    }
   },
-
   "_comment_rules": "Which audience each event gets, by the channel the signup was posted in. First match wins; no match = default. Red raids Tue + Thu, Blue raids Wed + Sun.",
   "audience_rules": [
-    { "match": { "channel_id": "1527491633233526824" }, "audience": "testers" },
-    { "match": { "channel_id": "1412563215396634624" }, "audience": "teamRed" },
-    { "match": { "channel_id": "1412580181285277770" }, "audience": "teamRed" },
-    { "match": { "channel_id": "1458633730624065673" }, "audience": "teamBlue" },
-    { "match": { "channel_id": "1466281351232618621" }, "audience": "teamBlue" }
+    {
+      "match": {
+        "channel_id": "1527491633233526824"
+      },
+      "audience": "testers"
+    },
+    {
+      "match": {
+        "channel_id": "1412563215396634624"
+      },
+      "audience": "teamRed"
+    },
+    {
+      "match": {
+        "channel_id": "1412580181285277770"
+      },
+      "audience": "teamRed"
+    },
+    {
+      "match": {
+        "channel_id": "1458633730624065673"
+      },
+      "audience": "teamBlue"
+    },
+    {
+      "match": {
+        "channel_id": "1466281351232618621"
+      },
+      "audience": "teamBlue"
+    }
   ],
-
   "_comment_windows": "Hours-before-start at which sign-up reminders fire. [168] + the Friday-only schedule in remind.yml = one reminder per event per week, sent Friday 5PM ET.",
-  "reminder_windows_hours": [168],
-
+  "reminder_windows_hours": [
+    168
+  ],
   "_comment_digest": "true = members missing from SEVERAL events get ONE combined DM listing them all, instead of one DM per event.",
   "digest_dms": true,
-
   "messages": {
     "default": "Hey {member_name}! You haven't signed up for **{event_title}** yet. It starts {event_time} ({event_time_relative}). Sign up here: {signup_link}",
     "digest_header": "Hey {member_name}! You haven't signed up for these upcoming raids yet:",
@@ -41,18 +78,17 @@
     "fallback": "(couldn't DM you) You have upcoming raids you haven't signed up for - please check the signup channels!",
     "per_window": {}
   },
-
   "_comment_announcements": "Channel messages posted N minutes before each event starts, in the event's own channel. Pings the @raiders role. (Announcement smoke test passed July 17, 2026.)",
   "announcements": [
     {
       "minutes_before": 60,
-      "mention_role_ids": ["1361002868781351152"],
-      "text": "Raid invites has started for tonight's raid. Please have your gear and consumes. Whisper Kcin or an Officer for an invite!"
+      "mention_role_ids": [
+        "1361002868781351152"
+      ],
+      "text": "Raid invites has started for tonight's raid! Please have your gear and consumes. Whisper Kcin or an Officer for an invite!"
     }
   ],
-
   "_comment_no_response": "Sign-up types that should STILL be nagged. Empty = anyone who clicked anything (Bench/Late/Tentative/Absence) is left alone.",
   "treat_as_no_response": [],
-
   "dry_run": false
 }
