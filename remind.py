@@ -174,14 +174,20 @@ def fetch_guild_members(guild_id, token):
     return members
 
 
-def fetch_guild_roles(guild_id, token):
-    """Fetch all guild roles as {role_id: permissions_int}."""
+def fetch_guild_roles_raw(guild_id, token):
+    """Fetch all guild roles as the raw Discord objects."""
     status, payload = http_json(
         "GET", f"{DISCORD_API}/guilds/{guild_id}/roles", headers=discord_headers(token)
     )
     if status != 200 or not isinstance(payload, list):
         raise RuntimeError(f"Discord roles fetch returned {status}: {payload!r}")
-    return {str(r["id"]): int(r.get("permissions") or 0) for r in payload}
+    return payload
+
+
+def fetch_guild_roles(guild_id, token):
+    """Fetch all guild roles as {role_id: permissions_int}."""
+    return {str(r["id"]): int(r.get("permissions") or 0)
+            for r in fetch_guild_roles_raw(guild_id, token)}
 
 
 def fetch_channel_overwrites(channel_id, token):
@@ -788,21 +794,31 @@ def check_channels(config, bot_token, ctx, log):
     if status != 200 or not isinstance(self_member, dict):
         raise RuntimeError(f"Bot is not a member of guild {guild_id}: {status}")
 
-    # Channels the bot must be able to POST in: every signup channel it might
-    # announce into, plus the officer log channel and any fallback channel.
-    targets = []
+    # Signup channels get announcements (so they need to ping); the log and
+    # fallback channels only need to receive plain messages.
+    signup_channels = []
     for rule in config.get("audience_rules") or []:
         cid = (rule.get("match") or {}).get("channel_id")
-        if cid and cid not in targets:
-            targets.append(str(cid))
+        if cid and str(cid) not in signup_channels:
+            signup_channels.append(str(cid))
+    plain_channels = []
     for key in ("log_channel_id", "fallback_channel_id"):
         cid = (config.get("discord") or {}).get(key)
-        if cid and str(cid) not in targets:
-            targets.append(str(cid))
+        if cid and str(cid) not in signup_channels:
+            plain_channels.append(str(cid))
 
-    roles_map = ctx.get_roles_map()
+    roles_raw = fetch_guild_roles_raw(guild_id, bot_token)
+    roles_map = {str(r["id"]): int(r.get("permissions") or 0) for r in roles_raw}
+    role_info = {str(r["id"]): r for r in roles_raw}
+    # MENTION_EVERYONE only matters for roles that are NOT mentionable: if a
+    # role has "Allow anyone to @mention this role" on, any member can ping it
+    # without the permission. Checking the channel bit alone reports a false
+    # PROBLEM on a setup that demonstrably works.
+    bot_can_ping_anything = False
+
     problems = []
-    for cid in targets:
+    for cid in signup_channels + plain_channels:
+        is_signup = cid in signup_channels
         name = ctx.get_channel_name(cid)
         try:
             overwrites = fetch_channel_overwrites(cid, bot_token)
@@ -813,22 +829,37 @@ def check_channels(config, bot_token, ctx, log):
         perms = member_channel_permissions(self_member, roles_map, guild_id, overwrites)
         can_view = bool(perms & VIEW_CHANNEL)
         can_send = bool(perms & SEND_MESSAGES)
-        can_ping = bool(perms & MENTION_EVERYONE)
-        verdict = "OK" if (can_view and can_send and can_ping) else "PROBLEM"
-        log(f"  {name} ({cid}): view={can_view} send={can_send} "
-            f"mention_roles={can_ping} -> {verdict}")
-        if verdict == "PROBLEM":
-            missing = [n for n, ok in (("View Channel", can_view),
-                                       ("Send Messages", can_send),
-                                       ("Mention All Roles", can_ping)) if not ok]
-            problems.append(f"{name}: missing {', '.join(missing)}")
+        missing = [n for n, ok in (("View Channel", can_view),
+                                   ("Send Messages", can_send)) if not ok]
+
+        ping_note = ""
+        if is_signup:
+            override = bool(perms & MENTION_EVERYONE) or bot_can_ping_anything
+            # Which roles would this channel's announcement actually ping?
+            fake = {"channelId": cid, "title": "", "id": "0"}
+            _aud, spec = pick_audience(fake, config)
+            want_roles = [str(r) for r in (spec.get("role_ids") or [])]
+            blocked = [r for r in want_roles
+                       if not role_info.get(r, {}).get("mentionable")]
+            if blocked and not override:
+                names = ", ".join(role_info.get(r, {}).get("name", r) for r in blocked)
+                missing.append(f"cannot ping {names}")
+                ping_note = f" ping={names}:BLOCKED"
+            elif want_roles:
+                names = ", ".join(role_info.get(r, {}).get("name", r) for r in want_roles)
+                ping_note = f" ping={names}:ok"
+
+        verdict = "OK" if not missing else "PROBLEM"
+        log(f"  {name} ({cid}): view={can_view} send={can_send}{ping_note} -> {verdict}")
+        if missing:
+            problems.append(f"{name}: {', '.join(missing)}")
 
     if problems:
         log("CHANNEL PERMISSION PROBLEMS:")
         for p in problems:
             log(f"  - {p}")
     else:
-        log(f"All {len(targets)} channel(s) OK.")
+        log(f"All {len(signup_channels) + len(plain_channels)} channel(s) OK.")
     return problems
 
 
