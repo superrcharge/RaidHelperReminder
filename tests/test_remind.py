@@ -380,7 +380,7 @@ class FullRuns(RunHarness, unittest.TestCase):
         self.assertEqual(posts, [])
 
 
-class SummaryMode(RunHarness, unittest.TestCase):
+class UnsignedListMode(RunHarness, unittest.TestCase):
     """Sunday 10AM ET officer list: reports who is unsigned, sends nothing."""
 
     OFFICERS = "3333333333333333333"
@@ -395,27 +395,27 @@ class SummaryMode(RunHarness, unittest.TestCase):
     def officer_posts(self, posts):
         return [c for cid, c in posts if cid == self.OFFICERS]
 
-    def test_summary_lists_unsigned_and_sends_no_dms(self):
+    def test_unsigned_list_lists_unsigned_and_sends_no_dms(self):
         now = KARA["startTime"] - 30 * 3600
         state, logs, dms, posts = self.run_once(
-            now, dry_run=False, config=self.officer_cfg(), mode="summary")
+            now, dry_run=False, config=self.officer_cfg(), mode="unsigned-list")
         self.assertEqual(dms, [])                       # nobody is DMed
         officer = "\n".join(self.officer_posts(posts))
         self.assertIn("Still unsigned", officer)
         self.assertIn("Slacker", officer)
         self.assertNotIn("Reminder DMs sent", officer)  # nothing was sent
 
-    def test_summary_writes_no_state(self):
+    def test_unsigned_list_writes_no_state(self):
         """The whole risk of this mode: marking sent would eat Friday's DMs."""
         now = KARA["startTime"] - 30 * 3600
         state, _logs, _dms, _posts = self.run_once(
-            now, dry_run=False, config=self.officer_cfg(), mode="summary")
+            now, dry_run=False, config=self.officer_cfg(), mode="unsigned-list")
         self.assertEqual(state["events"], {})
 
-    def test_summary_does_not_dedupe_the_next_reminder_run(self):
+    def test_unsigned_list_does_not_dedupe_the_next_reminder_run(self):
         now = KARA["startTime"] - 30 * 3600
         cfg = self.officer_cfg()
-        state, _l, dms, _p = self.run_once(now, dry_run=False, config=cfg, mode="summary")
+        state, _l, dms, _p = self.run_once(now, dry_run=False, config=cfg, mode="unsigned-list")
         self.assertEqual(dms, [])
         # Friday's real run, same state: the DM must still go out.
         state, _l, dms2, _p = self.run_once(
@@ -430,7 +430,7 @@ class SummaryMode(RunHarness, unittest.TestCase):
         self.assertIn("Reminder DMs sent", officer)
         self.assertNotIn("Still unsigned", officer)
 
-    def test_summary_never_truncates_the_officer_list(self):
+    def test_unsigned_list_never_truncates_the_officer_list(self):
         """names_list caps at 30 by default - the officer list must not."""
         crowd = [member(str(9000 + i), ["7001"], name=f"Raider{i}") for i in range(42)]
         self.assertIn("(+12 more)", remind.names_list(crowd))
@@ -438,18 +438,18 @@ class SummaryMode(RunHarness, unittest.TestCase):
         self.assertNotIn("more)", full)
         self.assertIn("Raider41", full)
 
-    def test_summary_respects_its_own_send_hour(self):
+    def test_unsigned_list_respects_its_own_send_hour(self):
         now = KARA["startTime"] - 30 * 3600
         hour = remind.eastern_hour(now)
         # Wrong hour: no-op, and it must not borrow the reminders hour.
-        cfg = self.officer_cfg(summary_send_hour_et=(hour + 1) % 24,
+        cfg = self.officer_cfg(unsigned_list_send_hour_et=(hour + 1) % 24,
                                reminders_send_hour_et=hour)
-        _s, logs, dms, posts = self.run_once(now, dry_run=False, config=cfg, mode="summary")
+        _s, logs, dms, posts = self.run_once(now, dry_run=False, config=cfg, mode="unsigned-list")
         self.assertEqual(self.officer_posts(posts), [])
-        self.assertIn("Skipping summary", "\n".join(logs))
+        self.assertIn("Skipping the officer unsigned-list", "\n".join(logs))
         # Right hour: it runs.
-        cfg = self.officer_cfg(summary_send_hour_et=hour)
-        _s, _logs, _dms, posts = self.run_once(now, dry_run=False, config=cfg, mode="summary")
+        cfg = self.officer_cfg(unsigned_list_send_hour_et=hour)
+        _s, _logs, _dms, posts = self.run_once(now, dry_run=False, config=cfg, mode="unsigned-list")
         self.assertIn("Still unsigned", "\n".join(self.officer_posts(posts)))
 
 

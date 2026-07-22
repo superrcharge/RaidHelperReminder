@@ -27,6 +27,8 @@ Usage:
     python remind.py                        # reminders + announcements
     python remind.py --mode reminders       # only the sign-up reminders
     python remind.py --mode announcements   # only the raid-time announcements
+    python remind.py --mode unsigned-list   # only the Sunday officer list
+    python remind.py --mode check           # read-only channel permission audit
     python remind.py --dry-run              # show what WOULD be sent
     python remind.py --config other.json --state other-state.json
 """
@@ -547,7 +549,7 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
     """Work out who hasn't signed up, and optionally DM them.
 
     send_dms=True  (Friday 5PM ET) - DM each non-signer and report who got one.
-    send_dms=False (Sunday 10AM ET) - "summary" mode: post the still-unsigned
+    send_dms=False (Sunday 10AM ET) - "unsigned-list" mode: post the still-unsigned
     list to officers chat and send nothing. It must NOT mark_sent, or it would
     silently dedup away the following Friday's DMs for everyone it listed.
     """
@@ -597,7 +599,7 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
             log(f"  Still unsigned for '{title}' ({len(missing)}): "
                 + names_list(missing))
             # The officer-facing "still unsigned" list belongs to the Sunday
-            # summary run only. On Friday the report says who was DMed; adding
+            # unsigned-list run only. On Friday the report says who was DMed; adding
             # the same 40 names underneath it just buries that.
             if not send_dms:
                 # No cap here: on Sunday this list IS the deliverable, and
@@ -900,8 +902,8 @@ def send_hour_ok(config, key, now, ignore_send_hour, log, label):
         return True
     current = eastern_hour(now)
     if current != int(want):
-        log(f"Skipping {label}: {current}:00 Eastern, "
-            f"{label} are pinned to {int(want)}:00 Eastern.")
+        log(f"Skipping {label}: it is {current}:00 Eastern, "
+            f"pinned to {int(want)}:00 Eastern.")
         return False
     return True
 
@@ -947,11 +949,11 @@ def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all
                         ignore_send_hour, log, "reminders"):
             run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
                           report=report)
-    if mode == "summary":
+    if mode == "unsigned-list":
         # Sunday 10AM Eastern: officers get the still-unsigned list. Sends no
         # DMs and writes no state - see run_reminders(send_dms=False).
-        if send_hour_ok(config, "summary_send_hour_et", now,
-                        ignore_send_hour, log, "summary"):
+        if send_hour_ok(config, "unsigned_list_send_hour_et", now,
+                        ignore_send_hour, log, "the officer unsigned-list"):
             run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
                           report=report, send_dms=False)
     if mode in ("all", "announcements"):
@@ -995,8 +997,8 @@ def main(argv=None):
     parser.add_argument("--config", default=os.path.join(os.path.dirname(__file__), "config.json"))
     parser.add_argument("--state", default=os.path.join(os.path.dirname(__file__), "state.json"))
     parser.add_argument("--mode",
-                        choices=["all", "reminders", "announcements", "summary",
-                                 "check"],
+                        choices=["all", "reminders", "announcements",
+                                 "unsigned-list", "check"],
                         default="all")
     parser.add_argument("--dry-run", action="store_true", help="print instead of sending")
     parser.add_argument("--ignore-send-hour", action="store_true",

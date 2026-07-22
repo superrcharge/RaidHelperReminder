@@ -170,7 +170,7 @@ Key ideas:
   | Job | Workflow file | When | Mode |
   |---|---|---|---|
   | Reminder DMs to non-signers | `remind.yml` | Friday 5PM ET | `reminders` |
-  | Officer list of who's still unsigned | `summary.yml` | Sunday 10AM ET | `summary` |
+  | Officer list of who's still unsigned | `officer-unsigned-list.yml` | Sunday 10AM ET | `unsigned-list` |
   | "Invites started" channel post | `announce.yml` | 60 min before each raid | `announcements` |
 
   The two Friday/Sunday jobs are each declared at **both** possible UTC hours,
