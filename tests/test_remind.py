@@ -401,7 +401,7 @@ class UnsignedListMode(RunHarness, unittest.TestCase):
             now, dry_run=False, config=self.officer_cfg(), mode="unsigned-list")
         self.assertEqual(dms, [])                       # nobody is DMed
         officer = "\n".join(self.officer_posts(posts))
-        self.assertIn("Still unsigned", officer)
+        self.assertIn("Still unsigned (1)", officer)   # count, then the names
         self.assertIn("Slacker", officer)
         self.assertNotIn("Reminder DMs sent", officer)  # nothing was sent
 

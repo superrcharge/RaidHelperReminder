@@ -605,8 +605,9 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
                 # No cap here: on Sunday this list IS the deliverable, and
                 # "(+12 more)" would hide exactly the people officers need to
                 # chase. The report builder's 1900-char guard is the backstop.
-                report_event(report, event)["unsigned"] = names_list(
-                    missing, cap=len(missing))
+                bucket = report_event(report, event)
+                bucket["unsigned"] = names_list(missing, cap=len(missing))
+                bucket["unsigned_count"] = len(missing)
 
         if not send_dms:
             continue
@@ -691,6 +692,7 @@ def report_event(report, event):
         "title": event_title(event),
         "start": int(event.get("startTime") or 0),
         "dms": [], "closed": [], "announced": None, "unsigned": "",
+        "unsigned_count": 0,
     })
 
 
@@ -975,7 +977,8 @@ def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all
             if ev["announced"]:
                 lines.append(f"📣 Invites announcement posted in {ev['announced']}")
             if ev["unsigned"]:
-                lines.append("⏳ Still unsigned: " + ev["unsigned"])
+                lines.append(f"⏳ Still unsigned ({ev['unsigned_count']}): "
+                             + ev["unsigned"])
             # Blank line after the title, then one line per fact.
             text = lines[0] + "\n\n" + "\n".join(lines[1:])
             if len(text) > 1900:  # Discord message limit is 2000 chars
