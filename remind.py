@@ -889,7 +889,7 @@ def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all
         start = int(ev.get("startTime") or 0)
         aud, _spec = pick_audience(ev, config)
         flag = "" if (start - now) <= max(windows) * 3600 else "  [beyond reminder window]"
-        log(f"    - <t:{start}> '{event_title(ev)}' "
+        log(f"    - <t:{start}> [{ev.get('id')}] '{event_title(ev)}' "
             f"in channel {ev.get('channelId')} -> audience '{aud}'{flag}")
 
     # Optional run reports: if discord.log_channel_id is set, ONE message per
