@@ -1,29 +1,34 @@
 # TEMPORARY - delete once it has answered its question.
 #
-# Does GitHub actually run our scheduled workflows?
+# Does GitHub actually run our scheduled workflows, and how long after a cron
+# is pushed does it start honoring it?
 #
-# Between go-live and July 21, 2026 every scheduled announcement posted 0,
-# because GitHub was throttling a "*/15" cron down to 1-2 arbitrary runs a day
-# at times hours outside the declared window. The cron was replaced with
-# explicit low-frequency slots, but the replacement was pushed six minutes
-# before its first slot and that slot did not fire - so as of now there is no
-# evidence the new schedule works either, and the next natural chance to find
-# out is a raid night ~20 hours away.
+# Background: between go-live and July 21, 2026 every scheduled announcement
+# posted 0, because a "*/15" cron was throttled to 1-2 arbitrary runs a day.
+# It was replaced with explicit low-frequency slots - but the replacement was
+# pushed six minutes before its first slot, and that slot did not fire. So the
+# open question is whether the new schedule works at all.
 #
-# This probe answers it in minutes instead. It sends nothing, calls no Discord
-# or Raid-Helper API, and uses no secrets - it only prints when it ran and
-# which slot it thinks it was, so "did it fire" and "how late was it" are both
-# readable from the run list.
+# What the run history actually shows: schedules on this repo DO run, but
+# late. The Friday digest fired at 21:53Z and 22:52Z against declared 21:00
+# and 22:00 - roughly 54 minutes behind. So "late" is normal here; "never" is
+# the thing we are testing for.
 #
-# Eight chances across ~85 minutes. If NONE of them fire, scheduling on this
-# repo is unreliable and announcements should move off GitHub cron entirely.
+# WHY HOURLY: the first version of this probe declared 8 slots inside a single
+# 70-minute window. All 8 were missed, which proved nothing - if registration
+# takes longer than the window, there are no slots left to fire in and the
+# result looks identical to a dead scheduler. One slot per hour keeps offering
+# chances indefinitely, so whenever the first run lands, the gap back to the
+# push time IS the registration lag.
+#
+# Sends nothing. No Discord or Raid-Helper calls, no secrets. It only prints
+# when it ran, so "did it fire" and "how late" are both readable.
 
 name: TEMP cron probe
 
 on:
   schedule:
-    - cron: "20,30,40,50 4 * * *"
-    - cron: "0,10,20,30 5 * * *"
+    - cron: "15 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -39,3 +44,4 @@ jobs:
           echo "declared slot  : ${{ github.event.schedule }}"
           echo "actual UTC time: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           echo "actual Eastern : $(TZ=America/New_York date '+%Y-%m-%d %H:%M:%S %Z')"
+          echo "minutes late   : $(( ($(date -u +%s) - $(date -u -d "$(date -u +%Y-%m-%dT%H:00:00Z)" +%s) - 900) / 60 ))"
