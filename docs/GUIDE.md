@@ -147,23 +147,42 @@ The script runs briefly on a schedule, then exits. It never sits online.
 ```mermaid
 flowchart TD
     A[Wake up on schedule] --> B[Ask Raid-Helper:<br/>which events are coming up?]
-    B --> C{Friday reminder run?}
+    B --> C{Friday 5PM ET?}
     C -- yes --> D[For each event: who signed up?]
     D --> E[Who is expected?<br/>roles, user list, or channel access]
     E --> F[Expected minus responded = missing]
     F --> G[One digest DM per missing person<br/>listing all their unsigned raids]
+    B --> K{Sunday 10AM ET?}
+    K -- yes --> L[Post the still-unsigned roll-up<br/>in officers chat - no DMs]
     B --> H{Within an hour of a raid?}
-    H -- yes --> I[Post 'invites started' in the<br/>signup channel, ping the role]
+    H -- yes --> I[Post 'invites started' in the<br/>signup channel, ping that team]
     G --> J[Write everything in the notebook<br/>state.json - nothing sends twice]
     I --> J
 ```
 
 Key ideas:
 
-- **Two jobs, one script, two schedules.** `--mode reminders` sends the
-  sign-up DMs; `--mode announcements` posts the raid-time channel messages.
-  Each has its own GitHub Actions workflow file: `announce.yml` checks every
-  15 minutes during evening raid hours, `remind.yml` runs Friday 5PM Eastern.
+- **Three jobs, one script, three schedules.** Each has its own workflow file,
+  and each file runs exactly one mode — modes are never chosen by looking at
+  which schedule fired, because GitHub reports that wrongly after any workflow
+  edit.
+
+  | Job | Workflow file | When | Mode |
+  |---|---|---|---|
+  | Reminder DMs to non-signers | `remind.yml` | Friday 5PM ET | `reminders` |
+  | Officer list of who's still unsigned | `summary.yml` | Sunday 10AM ET | `summary` |
+  | "Invites started" channel post | `announce.yml` | 60 min before each raid | `announcements` |
+
+  The two Friday/Sunday jobs are each declared at **both** possible UTC hours,
+  because GitHub's clock can't follow daylight saving. The script checks the
+  real Eastern hour and the wrong run quietly does nothing.
+
+- **Friday nudges people; Sunday informs officers.** The Friday run DMs each
+  individual non-signer. The Sunday run sends *no DMs at all* — it posts one
+  roll-up per raid to officers chat so officers can chase the stragglers for
+  the coming week. Sunday also writes nothing to the notebook, deliberately: if
+  it recorded people as "reminded", it would cancel the following Friday's DMs
+  for everyone it had just listed.
 - **Audiences** — who counts as "expected" — are defined per team. Two teams
   raiding twice a week = two audiences + rules mapping each event to its team
   (by signup channel or title). Each of the 4 weekly raids gets exactly the
@@ -175,6 +194,36 @@ Key ideas:
 - **"Responded" is generous** — anyone who clicked *anything* (Bench, Late,
   Tentative, Absence) is left alone. Configurable.
 - **Nobody is nagged after sign-ups close** or after the event starts.
+
+---
+
+### 3.1 Who gets what, on this server (live mapping)
+
+Every message the bot sends is aimed by **one** thing: the channel the event
+was posted in. That single rule decides who gets reminded, who gets pinged, and
+who shows up in the officer list — there is no second mapping to keep in sync.
+
+| Raid night | Signup channel | Audience | Friday DM goes to | T-60 ping |
+|---|---|---|---|---|
+| Tuesday | `1412563215396634624` | `teamRed` | Raid Team Red non-signers | @Raid Team Red |
+| Wednesday | `1458633730624065673` | `teamBlue` | Raid Team Blue non-signers | @Raid Team Blue |
+| Thursday | `1412580181285277770` | `teamRed` | Raid Team Red non-signers | @Raid Team Red |
+| Sunday | `1466281351232618621` | `teamBlue` | Raid Team Blue non-signers | @Raid Team Blue |
+| *(test channel)* | `1527491633233526824` | `testers` | Kcin + Mike only | Kcin + Mike |
+
+So the Friday reminder is **per team**, never a blanket ping of everyone. A
+person who raids on both teams gets **one** combined DM listing every raid they
+haven't signed up for, not one per team.
+
+> ⚠️ **The one thing that can go wrong.** If an event is posted in a channel
+> that isn't in the table above, no rule matches and it falls through to the
+> `default` audience — which is @raiders, 40+ people. Nothing warns you. If a
+> raid ever gets set up in a new or renamed channel, add its rule to
+> `audience_rules` **before** the first Friday run.
+
+The test channel row is permanent and deliberate: events posted there only ever
+reach Kcin and Mike, so the whole pipeline can be exercised for real without
+touching the guild. See section 8 for how to run that test.
 
 ---
 

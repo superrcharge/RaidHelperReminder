@@ -274,8 +274,12 @@ class StateLogic(unittest.TestCase):
         self.assertEqual(state["events"], {})
 
 
-class FullRuns(unittest.TestCase):
-    """Full run() against the fixture with all network calls mocked."""
+class RunHarness:
+    """Shared driver for full run() calls with every network call mocked.
+
+    Deliberately not a TestCase - subclassing one test class from another
+    re-runs the parent's tests inside the child.
+    """
 
     def run_once(self, now, state=None, dry_run=True, config=None, mode="all"):
         state = state if state is not None else {"events": {}}
@@ -296,6 +300,9 @@ class FullRuns(unittest.TestCase):
             remind.run(config or CONFIG, state, now, dry_run, "tok", "key",
                        log=logs.append, mode=mode)
         return state, logs, dms, channel_msgs
+
+class FullRuns(RunHarness, unittest.TestCase):
+    """Reminder and announcement behaviour end to end."""
 
     def test_dry_run_finds_the_slacker(self):
         now = KARA["startTime"] - 30 * 3600  # inside 48h window for Kara only
@@ -371,6 +378,71 @@ class FullRuns(unittest.TestCase):
         state, logs, dms, posts = self.run_once(
             KARA["startTime"] - 10 * 60, dry_run=False, config=cfg, mode="reminders")
         self.assertEqual(posts, [])
+
+
+class SummaryMode(RunHarness, unittest.TestCase):
+    """Sunday 10AM ET officer list: reports who is unsigned, sends nothing."""
+
+    OFFICERS = "3333333333333333333"
+
+    def officer_cfg(self, **extra):
+        cfg = dict(CONFIG)
+        cfg["discord"] = dict(CONFIG["discord"])
+        cfg["discord"]["log_channel_id"] = self.OFFICERS
+        cfg.update(extra)
+        return cfg
+
+    def officer_posts(self, posts):
+        return [c for cid, c in posts if cid == self.OFFICERS]
+
+    def test_summary_lists_unsigned_and_sends_no_dms(self):
+        now = KARA["startTime"] - 30 * 3600
+        state, logs, dms, posts = self.run_once(
+            now, dry_run=False, config=self.officer_cfg(), mode="summary")
+        self.assertEqual(dms, [])                       # nobody is DMed
+        officer = "\n".join(self.officer_posts(posts))
+        self.assertIn("Still unsigned", officer)
+        self.assertIn("Slacker", officer)
+        self.assertNotIn("Reminder DMs sent", officer)  # nothing was sent
+
+    def test_summary_writes_no_state(self):
+        """The whole risk of this mode: marking sent would eat Friday's DMs."""
+        now = KARA["startTime"] - 30 * 3600
+        state, _logs, _dms, _posts = self.run_once(
+            now, dry_run=False, config=self.officer_cfg(), mode="summary")
+        self.assertEqual(state["events"], {})
+
+    def test_summary_does_not_dedupe_the_next_reminder_run(self):
+        now = KARA["startTime"] - 30 * 3600
+        cfg = self.officer_cfg()
+        state, _l, dms, _p = self.run_once(now, dry_run=False, config=cfg, mode="summary")
+        self.assertEqual(dms, [])
+        # Friday's real run, same state: the DM must still go out.
+        state, _l, dms2, _p = self.run_once(
+            now + 60, state=state, dry_run=False, config=cfg, mode="reminders")
+        self.assertEqual([uid for uid, _ in dms2], ["104"])
+
+    def test_friday_report_omits_the_unsigned_list(self):
+        now = KARA["startTime"] - 30 * 3600
+        state, _l, dms, posts = self.run_once(
+            now, dry_run=False, config=self.officer_cfg(), mode="reminders")
+        officer = "\n".join(self.officer_posts(posts))
+        self.assertIn("Reminder DMs sent", officer)
+        self.assertNotIn("Still unsigned", officer)
+
+    def test_summary_respects_its_own_send_hour(self):
+        now = KARA["startTime"] - 30 * 3600
+        hour = remind.eastern_hour(now)
+        # Wrong hour: no-op, and it must not borrow the reminders hour.
+        cfg = self.officer_cfg(summary_send_hour_et=(hour + 1) % 24,
+                               reminders_send_hour_et=hour)
+        _s, logs, dms, posts = self.run_once(now, dry_run=False, config=cfg, mode="summary")
+        self.assertEqual(self.officer_posts(posts), [])
+        self.assertIn("Skipping summary", "\n".join(logs))
+        # Right hour: it runs.
+        cfg = self.officer_cfg(summary_send_hour_et=hour)
+        _s, _logs, _dms, posts = self.run_once(now, dry_run=False, config=cfg, mode="summary")
+        self.assertIn("Still unsigned", "\n".join(self.officer_posts(posts)))
 
 
 if __name__ == "__main__":

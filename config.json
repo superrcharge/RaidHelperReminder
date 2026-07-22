@@ -73,6 +73,8 @@
   "event_horizon_hours": 336,
   "_comment_send_hour": "Hour (0-23, US Eastern) the Friday digest is allowed to send. remind.yml fires at BOTH 21:00 and 22:00 UTC because GitHub cron cannot follow DST; this pins the actual send to 5PM Eastern year-round by making the wrong one a no-op. Set to null to let any scheduled run send.",
   "reminders_send_hour_et": 17,
+  "_comment_summary_hour": "Hour (0-23, US Eastern) the Sunday officer list is allowed to post. summary.yml fires at BOTH 14:00 and 15:00 UTC because GitHub cron cannot follow DST; this pins the post to 10AM Eastern year-round by making the wrong one a no-op. This run sends NO DMs and writes NO state - it only posts the still-unsigned list to the officer channel. Set to null to let any scheduled run post.",
+  "summary_send_hour_et": 10,
   "_comment_digest": "true = members missing from SEVERAL events get ONE combined DM listing them all, instead of one DM per event.",
   "digest_dms": true,
   "messages": {

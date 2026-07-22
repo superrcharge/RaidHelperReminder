@@ -24,8 +24,17 @@
     { "match": { "channel_id": "TEAM_B_SIGNUP_CHANNEL_ID" }, "audience": "teamB" }
   ],
 
-  "_comment_windows": "Hours-before-start at which sign-up reminders fire. [168] + the Friday-only schedule in remind.yml = one reminder per event per week, sent Friday 5PM ET.",
-  "reminder_windows_hours": [168],
+  "_comment_windows": "Hours-before-start at which sign-up reminders fire. [240] = 10 days, which covers a full lockout week posted in advance: by Friday's digest the following Sunday is already ~220h out, so a narrower window silently drops it.",
+  "reminder_windows_hours": [240],
+
+  "_comment_horizon": "How far ahead the bot LOOKS for events. Does NOT change when reminders send - that is reminder_windows_hours above. 336 = 14 days, so recurring events posted a week or more out (Raid-Helper does this) show up in the log instead of looking like the bot is broken.",
+  "event_horizon_hours": 336,
+
+  "_comment_send_hour": "Hour (0-23, US Eastern) the Friday reminder DMs are allowed to send. remind.yml fires at BOTH 21:00 and 22:00 UTC because GitHub cron cannot follow DST; this pins the actual send to 5PM Eastern year-round by making the wrong one a no-op. Set to null to let any scheduled run send.",
+  "reminders_send_hour_et": 17,
+
+  "_comment_summary_hour": "Hour (0-23, US Eastern) the Sunday officer list is allowed to post. summary.yml fires at BOTH 14:00 and 15:00 UTC for the same DST reason. This run sends NO DMs and writes NO state - it only posts the still-unsigned roll-up to discord.log_channel_id. Set to null to let any scheduled run post.",
+  "summary_send_hour_et": 10,
 
   "_comment_digest": "true = members missing from SEVERAL events get ONE combined DM listing them all, instead of one DM per event.",
   "digest_dms": true,
@@ -38,10 +47,11 @@
     "per_window": {}
   },
 
-  "_comment_announcements": "Channel messages posted N minutes before each event starts, in the event's own channel (or channel_id override). Optional match scopes an announcement to certain events.",
+  "_comment_announcements": "Channel messages posted N minutes before each event starts, in the event's own channel (or channel_id override). Optional match scopes an announcement to certain events. mention_audience=true pings the team that owns the raid, reusing the audience_rules above so there is no second mapping to maintain; mention_role_ids is the fallback for when an audience carries no roles.",
   "announcements": [
     {
       "minutes_before": 60,
+      "mention_audience": true,
       "mention_role_ids": ["RAIDER_ROLE_ID"],
       "text": "Raid invites has started for tonight's raid. Please have your gear and consumes. Whisper Kcin or an Officer for an invite!"
     }

@@ -543,7 +543,14 @@ def mark_announced(state, event, announce_key):
 # ---------------------------------------------------------------------------
 
 def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
-                  report=None):
+                  report=None, send_dms=True):
+    """Work out who hasn't signed up, and optionally DM them.
+
+    send_dms=True  (Friday 5PM ET) - DM each non-signer and report who got one.
+    send_dms=False (Sunday 10AM ET) - "summary" mode: post the still-unsigned
+    list to officers chat and send nothing. It must NOT mark_sent, or it would
+    silently dedup away the following Friday's DMs for everyone it listed.
+    """
     if report is None:
         report = {"events": {}, "failed": []}
     guild_id = config["discord"]["guild_id"]
@@ -589,7 +596,14 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
         if missing:
             log(f"  Still unsigned for '{title}' ({len(missing)}): "
                 + names_list(missing))
-            report_event(report, event)["unsigned"] = names_list(missing)
+            # The officer-facing "still unsigned" list belongs to the Sunday
+            # summary run only. On Friday the report says who was DMed; adding
+            # the same 40 names underneath it just buries that.
+            if not send_dms:
+                report_event(report, event)["unsigned"] = names_list(missing)
+
+        if not send_dms:
+            continue
 
         for member in missing:
             uid = str(member["user"]["id"])
@@ -643,7 +657,12 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
         send_channel_message(fallback_channel, f"{mentions} {text}", bot_token)
         log(f"  Fallback channel ping sent for {len(dms_closed)} member(s).")
 
-    log(f"Reminders done. {dm_count} DM(s) sent." if not dry_run else "Reminders done (dry run).")
+    if not send_dms:
+        listed = sum(1 for e in report["events"].values() if e["unsigned"])
+        log(f"Summary done. {listed} raid(s) with unsigned members; no DMs sent.")
+    else:
+        log(f"Reminders done. {dm_count} DM(s) sent." if not dry_run
+            else "Reminders done (dry run).")
 
 
 # ---------------------------------------------------------------------------
@@ -863,6 +882,26 @@ def check_channels(config, bot_token, ctx, log):
     return problems
 
 
+def send_hour_ok(config, key, now, ignore_send_hour, log, label):
+    """Is this the run that is really due, in US Eastern?
+
+    GitHub cron is UTC and cannot follow DST, so each scheduled job is declared
+    at BOTH possible UTC hours - one is right in summer, the other in winter -
+    and this makes the wrong one a no-op. Do NOT go back to letting state dedup
+    absorb the duplicate: dedup silences the SECOND run, so the EARLIER one
+    always won and the Friday digest quietly drifted to 4PM ET every winter.
+    """
+    want = config.get(key)
+    if want is None or ignore_send_hour:
+        return True
+    current = eastern_hour(now)
+    if current != int(want):
+        log(f"Skipping {label}: {current}:00 Eastern, "
+            f"{label} are pinned to {int(want)}:00 Eastern.")
+        return False
+    return True
+
+
 def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all",
         ignore_send_hour=False):
     server_id = config["raidhelper"]["server_id"]
@@ -900,21 +939,17 @@ def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all
 
     ctx = DiscordContext(guild_id, bot_token)
     if mode in ("all", "reminders"):
-        # GitHub cron is UTC and cannot follow DST, so remind.yml schedules
-        # BOTH 21:00 and 22:00 UTC every Friday - one of them is 5PM Eastern
-        # in summer, the other in winter. Without this gate the earlier run
-        # always won and dedup silenced the later one, so the digest actually
-        # went out at 5PM in summer but 4PM in winter. Checking the Eastern
-        # hour here makes the wrong run a no-op and pins the send time
-        # year-round.
-        want = config.get("reminders_send_hour_et")
-        current = eastern_hour(now)
-        if want is not None and not ignore_send_hour and current != int(want):
-            log(f"Skipping reminders: {current}:00 Eastern, "
-                f"reminders are pinned to {int(want)}:00 Eastern.")
-        else:
+        if send_hour_ok(config, "reminders_send_hour_et", now,
+                        ignore_send_hour, log, "reminders"):
             run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
                           report=report)
+    if mode == "summary":
+        # Sunday 10AM Eastern: officers get the still-unsigned list. Sends no
+        # DMs and writes no state - see run_reminders(send_dms=False).
+        if send_hour_ok(config, "summary_send_hour_et", now,
+                        ignore_send_hour, log, "summary"):
+            run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
+                          report=report, send_dms=False)
     if mode in ("all", "announcements"):
         run_announcements(config, state, events, now, dry_run, bot_token, log, ctx,
                           report=report)
@@ -956,7 +991,8 @@ def main(argv=None):
     parser.add_argument("--config", default=os.path.join(os.path.dirname(__file__), "config.json"))
     parser.add_argument("--state", default=os.path.join(os.path.dirname(__file__), "state.json"))
     parser.add_argument("--mode",
-                        choices=["all", "reminders", "announcements", "check"],
+                        choices=["all", "reminders", "announcements", "summary",
+                                 "check"],
                         default="all")
     parser.add_argument("--dry-run", action="store_true", help="print instead of sending")
     parser.add_argument("--ignore-send-hour", action="store_true",
