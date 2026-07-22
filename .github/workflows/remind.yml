@@ -14,8 +14,13 @@
 # Set the two secrets under: Repo -> Settings -> Secrets and variables -> Actions
 #   DISCORD_BOT_TOKEN
 #   RAIDHELPER_API_KEY
-# The "Run workflow" button (Actions tab) triggers a manual run for testing
-# (all three modes available there).
+# The "Run workflow" button (Actions tab) triggers a manual run for testing.
+# Mode "check" is a read-only permission audit: it reports whether the bot can
+# View / Send / Mention-roles in every signup channel plus the officer log
+# channel. Run it after ANY channel is recreated, after the bot is replaced,
+# and after anyone clicks "Sync Now" on a category - those are the three ways
+# the grants have silently died before, each time surfacing at T-60 on a raid
+# night instead of somewhere harmless.
 
 name: Send signup reminders
 
@@ -28,7 +33,7 @@ on:
       mode:
         description: "What to run"
         type: choice
-        options: [all, reminders, announcements]
+        options: [all, reminders, announcements, check]
         default: all
       dry_run:
         description: "Dry run (print instead of sending)"
