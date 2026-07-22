@@ -371,6 +371,22 @@ def windows_due(start_time, windows_hours, now):
     return [w for w in windows_hours if seconds_left <= w * 3600]
 
 
+def event_title(event, cap=80):
+    """A short, single-line raid name fit to drop into a sentence.
+
+    Raid-Helper's `title` field is the whole embed heading INCLUDING the
+    description - newlines, "bring consumables", a channel link, the lot. Pasted
+    raw into a DM that reads "you haven't signed up for **...**" it produces a
+    wall of text with a bare URL in the middle of it. Take the first line only
+    and cap it.
+    """
+    raw = (event.get("title") or "").split("\n")[0]
+    raw = " ".join(raw.split())
+    if not raw:
+        return "our next event"
+    return raw if len(raw) <= cap else raw[:cap - 1].rstrip() + "…"
+
+
 def format_message(template, event, member, guild_id):
     start = int(event.get("startTime") or 0)
     signup_link = "https://discord.com/channels/{}/{}/{}".format(
@@ -378,7 +394,7 @@ def format_message(template, event, member, guild_id):
     )
     return (
         template.replace("{member_name}", member_display_name(member))
-        .replace("{event_title}", event.get("title") or "our next event")
+        .replace("{event_title}", event_title(event))
         .replace("{event_time}", f"<t:{start}:F>")
         .replace("{event_time_relative}", f"<t:{start}:R>")
         .replace("{signup_link}", signup_link)
@@ -486,7 +502,7 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
     dm_count = 0
 
     for event in events:
-        title = event.get("title") or "?"
+        title = event_title(event)
         start = int(event.get("startTime") or 0)
         closing = int(event.get("closingTime") or 0)
         due = windows_due(start, windows, now)
@@ -591,7 +607,7 @@ def report_event(report, event):
     """The per-raid bucket of the run report this event's facts go into."""
     eid = str(event.get("id"))
     return report.setdefault("events", {}).setdefault(eid, {
-        "title": event.get("title") or "?",
+        "title": event_title(event),
         "start": int(event.get("startTime") or 0),
         "dms": [], "closed": [], "announced": None, "unsigned": "",
     })
@@ -632,11 +648,11 @@ def run_announcements(config, state, events, now, dry_run, bot_token, log, ctx=N
             channel = str(ann.get("channel_id") or event.get("channelId"))
             if dry_run:
                 log(f"  [dry-run] would announce in channel {channel} for "
-                    f"'{event.get('title')}': {text}")
+                    f"'{event_title(event)}': {text}")
             else:
                 if send_channel_message(channel, text, bot_token):
                     sent += 1
-                    log(f"  Announcement posted for '{event.get('title')}' in {channel}.")
+                    log(f"  Announcement posted for '{event_title(event)}' in {channel}.")
                     chan_label = ctx.get_channel_name(channel) if ctx else str(channel)
                     report_event(report, event)["announced"] = chan_label
                     # Deliberately NO "still unsigned" list here: at T-60 the
@@ -718,7 +734,7 @@ def run(config, state, now, dry_run, bot_token, rh_api_key, log=print, mode="all
         start = int(ev.get("startTime") or 0)
         aud, _spec = pick_audience(ev, config)
         flag = "" if (start - now) <= max(windows) * 3600 else "  [beyond reminder window]"
-        log(f"    - <t:{start}> '{ev.get('title')}' "
+        log(f"    - <t:{start}> '{event_title(ev)}' "
             f"in channel {ev.get('channelId')} -> audience '{aud}'{flag}")
 
     # Optional run reports: if discord.log_channel_id is set, ONE message per
