@@ -430,6 +430,14 @@ class SummaryMode(RunHarness, unittest.TestCase):
         self.assertIn("Reminder DMs sent", officer)
         self.assertNotIn("Still unsigned", officer)
 
+    def test_summary_never_truncates_the_officer_list(self):
+        """names_list caps at 30 by default - the officer list must not."""
+        crowd = [member(str(9000 + i), ["7001"], name=f"Raider{i}") for i in range(42)]
+        self.assertIn("(+12 more)", remind.names_list(crowd))
+        full = remind.names_list(crowd, cap=len(crowd))
+        self.assertNotIn("more)", full)
+        self.assertIn("Raider41", full)
+
     def test_summary_respects_its_own_send_hour(self):
         now = KARA["startTime"] - 30 * 3600
         hour = remind.eastern_hour(now)

@@ -600,7 +600,11 @@ def run_reminders(config, state, events, now, dry_run, bot_token, ctx, log,
             # summary run only. On Friday the report says who was DMed; adding
             # the same 40 names underneath it just buries that.
             if not send_dms:
-                report_event(report, event)["unsigned"] = names_list(missing)
+                # No cap here: on Sunday this list IS the deliverable, and
+                # "(+12 more)" would hide exactly the people officers need to
+                # chase. The report builder's 1900-char guard is the backstop.
+                report_event(report, event)["unsigned"] = names_list(
+                    missing, cap=len(missing))
 
         if not send_dms:
             continue
