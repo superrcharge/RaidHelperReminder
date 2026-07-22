@@ -67,7 +67,7 @@
   ],
   "_comment_windows": "Hours-before-start at which sign-up reminders fire. 240 = 10 days, because events are posted Tuesday 8PM for the FOLLOWING lockout week: by the Friday summary the Sunday raid is ~9 days (220h) out, so the old 168h window silently dropped it. One reminder per event per person - state.json dedup - sent by the Friday-only schedule in remind.yml.",
   "reminder_windows_hours": [
-    240
+    1
   ],
   "_comment_horizon": "How far ahead the bot LOOKS for events. Does NOT change when reminders send - that is reminder_windows_hours above. 336 = 14 days, so recurring events posted a week or more out (Raid-Helper does this) show up in the log instead of looking like the bot is broken.",
   "event_horizon_hours": 336,
