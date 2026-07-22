@@ -100,6 +100,35 @@ class AudienceLogic(unittest.TestCase):
         self.assertEqual(got, {"TeamBOnly", "SocialMember"})
 
 
+class AnnouncementMentions(unittest.TestCase):
+    """A raid must ping its own team, never the whole raider pool."""
+
+    def test_mention_audience_pings_the_events_team(self):
+        ann = {"mention_audience": True, "mention_role_ids": ["9999"]}
+        # KARA resolves to teamA (role 7001), so 7001 is pinged - not 9999.
+        self.assertEqual(remind.announcement_mentions(ann, KARA, CONFIG),
+                         "<@&7001> ")
+
+    def test_without_the_flag_the_literal_roles_are_used(self):
+        ann = {"mention_role_ids": ["9999"]}
+        self.assertEqual(remind.announcement_mentions(ann, KARA, CONFIG),
+                         "<@&9999> ")
+
+    def test_falls_back_when_the_audience_has_no_roles(self):
+        cfg = json.loads(json.dumps(CONFIG))
+        cfg["audiences"]["teamA"] = {}
+        ann = {"mention_audience": True, "mention_role_ids": ["9999"]}
+        self.assertEqual(remind.announcement_mentions(ann, KARA, cfg),
+                         "<@&9999> ")
+
+    def test_user_id_audiences_ping_the_users(self):
+        cfg = json.loads(json.dumps(CONFIG))
+        cfg["audiences"]["teamA"] = {"user_ids": ["104"]}
+        ann = {"mention_audience": True, "mention_role_ids": ["9999"]}
+        self.assertEqual(remind.announcement_mentions(ann, KARA, cfg),
+                         "<@104> ")
+
+
 class ChannelAccessAudience(unittest.TestCase):
     """The workaround for channels that don't line up with a single role:
     compute who can actually SEE the channel from permission overwrites."""

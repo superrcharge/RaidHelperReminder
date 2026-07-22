@@ -80,10 +80,11 @@
     "fallback": "(couldn't DM you) You have upcoming raids you haven't signed up for - please check the signup channels!",
     "per_window": {}
   },
-  "_comment_announcements": "Channel messages posted N minutes before each event starts, in the event's own channel. Pings the @raiders role. (Announcement smoke test passed July 17, 2026.)",
+  "_comment_announcements": "Channel messages posted N minutes before each event starts, in the event's own channel. mention_audience=true pings the team that owns the raid (Red raids ping Raid Team Red, Blue ping Raid Team Blue) using the same channel rules as the DMs - so there is no second mapping to maintain. mention_role_ids stays as the fallback if an audience has no roles.",
   "announcements": [
     {
       "minutes_before": 60,
+      "mention_audience": true,
       "mention_role_ids": [
         "1361002868781351152"
       ],

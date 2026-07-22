@@ -253,6 +253,24 @@ def pick_audience(event, config):
     return "default", audiences.get("default") or {}
 
 
+def announcement_mentions(ann, event, config):
+    """The ping prefix for an announcement.
+
+    With "mention_audience": true the post pings whatever audience the event
+    already resolves to - Red raids ping Raid Team Red, Blue ping Raid Team
+    Blue - so the ping follows the same channel rules as the reminder DMs and
+    there is no second mapping to keep in sync. Falls back to the literal
+    mention_role_ids when the audience carries no roles.
+    """
+    if ann.get("mention_audience"):
+        _name, spec = pick_audience(event, config)
+        parts = [f"<@&{rid}> " for rid in spec.get("role_ids") or []]
+        parts += [f"<@{uid}> " for uid in spec.get("user_ids") or []]
+        if parts:
+            return "".join(parts)
+    return "".join(f"<@&{rid}> " for rid in ann.get("mention_role_ids") or [])
+
+
 def rule_matches(match, event):
     if "channel_id" in match and str(event.get("channelId")) != str(match["channel_id"]):
         return False
@@ -643,7 +661,7 @@ def run_announcements(config, state, events, now, dry_run, bot_token, log, ctx=N
             key = f"{idx}:{minutes}"
             if already_announced(state, event.get("id"), key):
                 continue
-            mentions = "".join(f"<@&{rid}> " for rid in ann.get("mention_role_ids") or [])
+            mentions = announcement_mentions(ann, event, config)
             text = mentions + format_message(ann.get("text") or "", event, None, guild_id)
             channel = str(ann.get("channel_id") or event.get("channelId"))
             if dry_run:
