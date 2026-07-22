@@ -1,0 +1,86 @@
+# Sunday officer list: "who still hasn't signed up".
+#
+# This file has exactly ONE purpose so no mode-detection is needed: every run
+# here is unsigned-list mode. The Friday reminder DMs live in remind.yml and the
+# raid-time channel posts live in announce.yml. (Historical note: one combined
+# file routed by matching github.event.schedule, but GitHub misattributes which
+# cron fired a run after workflow edits, silently running the wrong mode. Never
+# route modes by schedule string - add a file instead.)
+#
+# WHAT THIS IS NOT: it does not DM anybody. Friday 5PM ET nudges the individual
+# non-signers; this posts the roll-up to officers chat on Sunday morning so
+# officers can chase whoever ignored the Friday DM. Because it runs AFTER the
+# Friday nudge, this list is the residue - it should be short.
+#
+# It also writes NO state - see run_reminders(send_dms=False) in remind.py. If
+# it ever marked members as reminded it would silently dedup away the FOLLOWING
+# Friday's DMs for everyone it listed.
+#
+# Schedule: Sunday 10AM Eastern. GitHub cron is UTC and can't follow US
+# daylight saving, so BOTH possible UTC times are scheduled and the script
+# decides which one is really 10AM Eastern (config.json
+# unsigned_list_send_hour_et, checked in remind.py) - the other logs
+# "Skipping the officer unsigned-list" and exits.
+#
+# WHY THE DAY IS PLAIN SUNDAY: unlike the 9PM raid announcements, a morning
+# Eastern time is still the SAME day in UTC (10AM EDT = 14:00 UTC), so there is
+# no day shift here. The announce.yml crons DO shift a day - do not copy the
+# day list from that file.
+
+name: Sunday officer unsigned-list
+
+on:
+  schedule:
+    - cron: "0 14 * * 0"     # Sunday 10AM EDT (summer)
+    - cron: "0 15 * * 0"     # Sunday 10AM EST (winter)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (print instead of posting)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # allows the workflow to commit state.json back
+
+concurrency:
+  group: reminders   # shared with remind.yml and announce.yml - never two at once
+  cancel-in-progress: false
+
+jobs:
+  unsigned-list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Post officer unsigned-list
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          RAIDHELPER_API_KEY: ${{ secrets.RAIDHELPER_API_KEY }}
+        run: |
+          EXTRA=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual runs are for testing, so they bypass the 10AM-Eastern gate
+            # - otherwise the Run workflow button would do nothing 23 hours a
+            # day and look broken.
+            EXTRA="--ignore-send-hour"
+          fi
+          [ "${{ inputs.dry_run }}" = "true" ] && EXTRA="$EXTRA --dry-run"
+          python remind.py --mode unsigned-list $EXTRA
+
+      - name: Save state (this mode writes none, but stay consistent)
+        run: |
+          if [ -n "$(git status --porcelain state.json)" ]; then
+            git config user.name "reminder-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add state.json
+            git commit -m "Update reminder state"
+            git pull --rebase
+            git push
+          else
+            echo "No state changes."
+          fi
