@@ -30,9 +30,14 @@
 name: Sunday officer unsigned-list
 
 on:
-  schedule:
-    - cron: "0 14 * * 0"     # Sunday 10AM EDT (summer)
-    - cron: "0 15 * * 0"     # Sunday 10AM EST (winter)
+  # schedule: DISABLED 2026-07-23 - scheduling moved to cron-job.org, which
+  # fires this via the workflow_dispatch API below (Sun 10AM ET). This is the
+  # workflow with NO state/dedup, so a GitHub run colliding with a cron-job.org
+  # run would post the officer list twice - removing the GitHub trigger makes
+  # cron-job.org the single source of timing and rules that out entirely.
+  # Re-enable by uncommenting the two lines below if cron-job.org ever goes away.
+  #   - cron: "0 14 * * 0"     # Sunday 10AM EDT (summer)
+  #   - cron: "0 15 * * 0"     # Sunday 10AM EST (winter)
   workflow_dispatch:
     inputs:
       dry_run:
